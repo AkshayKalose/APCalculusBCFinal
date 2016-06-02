@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Sequences &amp; Series</title>
+		<script src="./Chart.min.js"></script>
+		<script src="./math.min.js"></script>
+		<script type="text/x-mathjax-config">
+			MathJax.Hub.Config({
+			  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+			});
+		</script>
+		<script type="text/javascript" async src="./MathJax-2.6.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+	</head>
+	<style>
+		span.block {
+			display: block;
+			width: 100%;
+			text-align: center;
+		}
+		span.inline-block, span.MJXc-display {
+			display: inline-block;
+			text-align: left;
+		}
+	</style>
+	<body>
+			<span id="input_block" class="block">
+				$$\sum_{n=1}^{\infty}$$
+				<input type="text" id="equation">
+				<button id="start" onclick="start()">Start</button>
+			</span>
+			<span class="block">
+				<span class="inline-block">
+					<canvas id="sequence_chart" width="400" height="400"></canvas>
+					<div>
+						a<sub id="element_index">1</sub> &asymp; <span id="element">0</span>
+					</div>
+				</span>
+				<span class="inline-block">
+					<canvas id="series_chart" width="400" height="400"></canvas>
+					<div>
+						S<sub id="sum_index">1</sub> &asymp; <span id="sum">0</span>
+					</div>
+				</span>
+			</span>
+		<script>
+			var eqn, scope, interval, counter, series = 0, seriesArray = [];
+			var element_index = document.getElementById("element_index"),
+					element = document.getElementById("element"),
+					sum_index = document.getElementById("sum_index"),
+					sum = document.getElementById("sum");
+
+			function start() {
+				clearInterval(interval);
+
+				eqn = document.getElementById("equation").value;
+
+				scope = {
+					n: 1,
+				};
+
+				counter = 1000;
+
+				seqChart.data.datasets[0].data = [];
+				seqChart.data.labels = [];
+				serChart.data.datasets[0].data[0] = 0;
+				seriesArray = [];
+
+				seqChart.update(0, false);
+				serChart.update(0, false);
+
+				element_index.innerHTML = 1;
+				element.innerHTML = 0;
+				sum_index.innerHTML = 1;
+				sum.innerHTML = 0;
+
+				interval = setInterval(updateCharts, counter);
+			}
+
+			var updateCharts = function() {
+				clearInterval(interval);
+
+				counter /= (counter >= 0 ? Math.E/100 + 1 : 1);
+				interval = setInterval(updateCharts, counter);
+
+				var nextElement = math.eval(eqn, scope);
+
+				seriesArray.push(isNaN(nextElement) ? 0 : nextElement);
+				// Somehow NaN Problemm Still Exists When Running n!/n^n
+				seqChart.data.datasets[0].data.push(isNaN(nextElement) ? 0 : nextElement);
+				seqChart.data.labels.push(scope.n++);
+
+				// Keep 20 Bars Maximum
+				if (seqChart.data.datasets[0].data.length == 20) {
+					seqChart.data.labels.shift();
+					seqChart.data.datasets[0].data.shift();
+				}
+				seqChart.update(counter, false);
+
+				var latestSeries = seriesArray.reduce(function (a, b){return a + b;}, 0)
+
+				serChart.data.datasets[0].data[0] = latestSeries;
+				serChart.update(counter, false);
+
+				element_index.innerHTML = seqChart.data.labels[seqChart.data.labels.length - 1];
+				element.innerHTML = nextElement;
+				sum_index.innerHTML = element_index.innerHTML;
+				sum.innerHTML = latestSeries;
+			};
+
+			var seqCanvas = document.getElementById('sequence_chart'),
+				seqCtx = seqCanvas.getContext('2d'),
+				seqParameters = {
+					type: 'bar',
+					data: {
+						labels: [],
+						datasets: [{
+							label: "Sequence Elements",
+							data: [],
+						}]
+					},
+					options: {
+						scales: {
+							xAxes: [{
+								categoryPercentage: 1,
+								barPercentage: 1,
+							}],
+						}
+					}
+				},
+				serCanvas = document.getElementById('series_chart'),
+				serCtx = serCanvas.getContext('2d'),
+				serParameters = {
+					type: 'bar',
+					data: {
+						labels: ["Series Sum"],
+						datasets: [{
+							label: "Series Sum",
+							data: [0],
+						}]
+					},
+					options: {
+						scales: {
+							xAxes: [{
+								categoryPercentage: 1,
+								barPercentage: 1,
+							}],
+						}
+					}
+				};
+
+			Chart.defaults.global.responsive = false;
+			var seqChart = new Chart(seqCtx, seqParameters);
+			var serChart = new Chart(serCtx, serParameters);
+		</script>
+	</body>
+</html>
